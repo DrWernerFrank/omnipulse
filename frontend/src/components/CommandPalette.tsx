@@ -62,6 +62,12 @@ export function CommandPalette() {
       hint: "d",
       run: () => useTerminal.setState((s) => ({ rightPane: !s.rightPane })),
     },
+    {
+      id: "skin-tiling",
+      label: "Skin: switch to the tiling terminal (classic v1)",
+      hint: "TL",
+      run: () => st().setAppearance("tiling"),
+    },
   ];
 
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(q.toLowerCase()));

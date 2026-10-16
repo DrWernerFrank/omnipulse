@@ -7,17 +7,20 @@ import { LeftPanel } from "./components/LeftPanel";
 import { StatusBar, usePausedDrain } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
 import { useTerminal } from "./store";
+import { TilingApp } from "./tiling/TilingApp";
 import { CATEGORIES } from "./types";
 
 export default function App() {
   const rightPane = useTerminal((s) => s.rightPane);
   const setPalette = useTerminal((s) => s.setPalette);
+  const appearance = useTerminal((s) => s.appearance);
   usePausedDrain();
 
   useEffect(() => connectStream(), []);
 
-  // global keyboard map (tape-specific j/k handled inside EventTape)
+  // global keyboard map (tape skin only — the tiling skin installs its own)
   useEffect(() => {
+    if (useTerminal.getState().appearance === "tiling") return;
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const typing = tag === "INPUT" || tag === "TEXTAREA";
@@ -71,7 +74,9 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [setPalette]);
+  }, [setPalette, appearance]);
+
+  if (appearance === "tiling") return <TilingApp />;
 
   return (
     <div className="relative flex h-full flex-col bg-bg text-dim-text2">

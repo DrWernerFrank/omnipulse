@@ -18,21 +18,22 @@ Bluesky firehose, keyless Telegram web preview — all no-API-key. Optional
 OpenAI / Anthropic / Ollama / any-OpenAI-compatible keys add LLM headline
 refinement on top of the always-on local heuristic NLP pipeline.
 
-**Two engine profiles, one repo** (this is a merge of two OmniPulse
-generations — pick per deployment, since only one engine can own the process):
+**One backend, one app, two terminal skins** (this repo merges two OmniPulse
+generations — the engines are merged into one, and both terminal UIs live in
+the same frontend, switchable like a theme):
 
-| | **v2** (default) | **v1** |
+| | **merged engine** (default) | **v1 engine** (legacy profile) |
 |---|---|---|
 | Engine | fast in-process pipeline, numpy cluster index | Redis-Streams pipeline, sharded engine |
 | Store | Postgres/Timescale + in-memory fallback | TimescaleDB hypertable + pgvector (lite: memory) |
 | API | `/api/*`, `/ws`, `/stream/*` | `/v1/*` |
 | MCP | stdio (`python -m app.mcp_server`) | streamable HTTP `/mcp` (11 tools, `wait_for_events`) |
-| Terminal | `frontend/` — tape + palette, port 3000/5173 | `frontend_v1/` — tiling multi-pane, port 5174 |
+| Terminal | `frontend/` — **tape + tiling skins**, port 3000/5173, switch in the UI | `frontend_v1/` — the original standalone tiling terminal, port 5174 |
 | Config | `OMNIPULSE_*` | `OMNI_*` |
 
 ```bash
-OMNIPULSE_PROFILE=v2   # default
-OMNIPULSE_PROFILE=v1   # the merged original architecture
+OMNIPULSE_PROFILE=v2   # default — merged engine, both skins
+OMNIPULSE_PROFILE=v1   # the original architecture, for reference / comparison
 ```
 
 ```
@@ -88,11 +89,29 @@ uvicorn app.main:app --port 8000
 cd ../frontend && npm install && npm run dev   # terminal at :5173 (proxied)
 ```
 
-### Running the v1 profile (merged original engine)
+### Switching terminal skins (tape ⇄ tiling)
 
-The v1 backend, its tiling terminal and its 109-source registry ship in the
-same repo and boot from the same process — flip one setting. `OMNI_MODE=lite`
-runs it with zero infrastructure (in-memory bus + store):
+Both terminal generations ship inside the one app and run against the one
+backend — switch like a theme:
+
+- **Top bar button**: `TL` (tape) / `TAPE ⇄` (tiling)
+- **Command palette** (tape skin): "Skin: switch to the tiling terminal"
+- **Command bar** (tiling skin): `:tape`
+- The choice persists in `localStorage` (`omnipulse.appearance`) and survives
+  reloads. Both skins share the same live `/ws` firehose, source registry,
+  and story-cluster state — switching is instant, no reconnect.
+
+The **tape skin** is the v2 terminal: virtualized tape + command palette.
+The **tiling skin** is the classic v1 terminal: quad/wide/reader panes
+(firehose · clusters · reader · sources), full filter DSL
+(`/` — `u>=7 cat:crypto $NVDA src:reuters`), keyboard-first navigation
+(`j/k`, `1-4`, `z` zoom, `L` layout), sound on urgency ≥ 9.
+
+### Running the v1 engine profile (original architecture)
+
+The v1 backend and its 109-source registry ship in the same repo and boot
+from the same process — flip one setting. `OMNI_MODE=lite` runs it with
+zero infrastructure (in-memory bus + store):
 
 ```bash
 cd backend
@@ -100,7 +119,7 @@ set OMNIPULSE_PROFILE=v1
 set OMNI_MODE=lite
 uvicorn app.main:app --port 8000            # /v1/*, /healthz, HTTP MCP at /mcp
 
-cd ../frontend_v1 && npm install && npm run dev   # tiling terminal at :5174
+cd ../frontend_v1 && npm install && npm run dev   # standalone v1 terminal at :5174
 ```
 
 Docker, v1 architecture at full scale (Redis Streams + Timescale + sharding):
@@ -110,9 +129,9 @@ OMNIPULSE_PROFILE=v1 TERMINAL_DIR=frontend_v1 docker compose up -d --build
 # v1 MCP: claude mcp add --transport http omnipulse http://localhost:8000/mcp
 ```
 
-Both terminals can run side by side (`:5173` v2, `:5174` v1) — but only one
-backend profile can own port 8000, so restart the backend with the other
-`OMNIPULSE_PROFILE` to switch engines.
+The v1 profile is the reference/original engine; the default profile serves
+both terminal skins off the merged engine. `frontend_v1/` remains as the
+standalone v1 terminal for that profile.
 
 ### Agent stack (MCP)
 

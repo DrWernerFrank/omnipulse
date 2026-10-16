@@ -7,6 +7,17 @@ const MAX_ROWS = 10_000; // ring capacity; virtualized list renders only what's 
 // from snapshot-seed vs live-WS overlap and duplicate frames on reconnect
 const seenIds = new Set<string>();
 
+export type Appearance = "tape" | "tiling";
+const APPEARANCE_KEY = "omnipulse.appearance";
+
+function loadAppearance(): Appearance {
+  try {
+    return localStorage.getItem(APPEARANCE_KEY) === "tiling" ? "tiling" : "tape";
+  } catch {
+    return "tape";
+  }
+}
+
 export interface Filters {
   q: string;
   categories: string[];
@@ -29,6 +40,7 @@ interface TerminalState {
   leftPane: "filters" | "sources" | "clusters";
   rightPane: boolean;
   lastEventAt: number; // for flash animation
+  appearance: Appearance; // terminal skin: tape (v2) or tiling (classic v1)
 
   pushEvent: (ev: NewsEvent) => void;
   setClusters: (cs: ClusterSummary[]) => void;
@@ -44,6 +56,7 @@ interface TerminalState {
   togglePane: (pane: "leftPane" | "rightPane" | null, value?: never) => void;
   setPalette: (open: boolean) => void;
   clearTape: () => void;
+  setAppearance: (a: Appearance) => void;
 }
 
 export const useTerminal = create<TerminalState>((set, get) => ({
@@ -60,6 +73,7 @@ export const useTerminal = create<TerminalState>((set, get) => ({
   leftPane: "filters",
   rightPane: true,
   lastEventAt: 0,
+  appearance: loadAppearance(),
 
   pushEvent: (ev) => {
     const { events, filters } = get();
@@ -119,6 +133,14 @@ export const useTerminal = create<TerminalState>((set, get) => ({
   clearTape: () => {
     seenIds.clear();
     set({ events: [] });
+  },
+  setAppearance: (appearance) => {
+    try {
+      localStorage.setItem(APPEARANCE_KEY, appearance);
+    } catch {
+      /* private mode */
+    }
+    set({ appearance });
   },
 }));
 

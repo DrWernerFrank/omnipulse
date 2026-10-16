@@ -20,6 +20,7 @@ export function TopBar() {
   const paused = useTerminal((s) => s.filters.paused);
   const togglePaused = useTerminal((s) => s.togglePaused);
   const setPalette = useTerminal((s) => s.setPalette);
+  const setAppearance = useTerminal((s) => s.setAppearance);
 
   const conn =
     connection === "live" ? (
@@ -85,6 +86,13 @@ export function TopBar() {
           </>
         )}
         <Clock />
+        <button
+          onClick={() => setAppearance("tiling")}
+          className="rounded-sm border border-bg-border px-2 py-[1px] text-[10px] text-dim-text2 hover:text-dim-text"
+          title="Switch terminal skin → tiling (classic v1 terminal, quad panes)"
+        >
+          TL
+        </button>
         <button
           onClick={() => setPalette(true)}
           className="rounded-sm border border-bg-border px-2 py-[1px] text-[10px] text-dim-text2 hover:text-dim-text"
