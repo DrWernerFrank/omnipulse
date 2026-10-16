@@ -52,22 +52,54 @@ Base: `http://localhost:8000`. Spec: `/openapi.json` (OpenAPI 3.1, hand-stable).
 
 The one URL that matters: `GET /api/events?compact=true&limit=50`
 
-Filters (all optional, combinable): `q`, `categories`, `tickers`, `sources`,
-`entities`, `min_urgency`, `since` (ISO-8601 or epoch), `max_age_sec`,
-`cursor` (from `X-Next-Cursor`), `limit` ≤ 1000, `compact`.
+Filters (all optional, combinable): `q`, `dsl`, `categories`, `tickers`,
+`sources`, `entities`, `min_urgency`, `since` (ISO-8601 or epoch),
+`max_age_sec`, `cursor` (from `X-Next-Cursor`), `limit` ≤ 1000, `compact`,
+`format=headline` (one-line wire output).
+
+**Query DSL** (`dsl`, merged from the v1 engine — same grammar everywhere):
+
+```
+u>=7 cat:crypto,macro $NVDA tk:BTC src:reuters scat:wire loc:US tier<=2
+sent>0.3 nov>=0.5 vs:confirmed ent:openai cluster:cls_... "rate cut" -opinion
+```
+
+Repeated values OR, different keys AND, bare words must appear in the
+headline, `-word` excludes.
+
+**Outbound webhooks** (merged from v1): register a receiver and get
+HMAC-signed POSTs of matching events:
+
+```
+curl -X POST localhost:8000/api/webhooks \
+  -d '{"url":"https://your.service/news","secret":"s3cret","dsl":"u>=8 cat:macro"}'
+```
+
+Envelope `{"type":"EVENT_CREATED","data":{…}}`, headers `X-OmniPulse-Event`,
+`X-OmniPulse-Webhook`, `X-OmniPulse-Signature: sha256=<hmac-sha256 body>`.
 
 `GET /api/events.jsonl?compact=true&limit=500` — NDJSON batch snapshot.
+
+## 2b. v1 profile (merged original engine)
+
+`OMNIPULSE_PROFILE=v1` serves the Redis-Stream architecture at `/v1/*`
+(same NewsEvent schema): REST + WS/SSE streams with `?filter=` DSL +
+`format=full|compact|headline`, source CRUD, `wait_for_events` MCP tool via
+streamable HTTP at `/mcp` (`claude mcp add --transport http omnipulse
+http://localhost:8000/mcp`). See `omnipulse/backend/omnipulse/` for its
+module docs; config via `OMNI_*` env vars.
 
 ## 3. WebSocket
 
 ```
 ws://host/ws?tickers=NVDA,BTC&min_urgency=7&compact=true
+ws://host/ws?dsl=u%3E%3D7%20cat%3Acrypto
 ```
 
 Server filters; you only receive matches. Re-filter live:
 
 ```json
-{"type": "resubscribe", "filters": {"q": "fed", "categories": ["Macro"], "min_urgency": 6}}
+{"type": "resubscribe", "filters": {"q": "fed", "categories": ["Macro"], "min_urgency": 6, "dsl": "u>=6"}}
 ```
 
 ## 4. SSE

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # ---- core ----
     env: str = "production"
     log_level: str = "INFO"
+    # merged engine profile: v2 = fast in-process engine (default), v1 = the
+    # Redis-stream/Timescale pipeline + tiling terminal (OMNI_* env namespace)
+    profile: str = "v2"
     api_key: str | None = None
     public_url: str = "http://localhost:8000"
     sources_file: str = "config/default_sources.json"
@@ -64,13 +67,18 @@ class Settings(BaseSettings):
     websub_renew_sec: int = 21600
 
     # ---- optional LLM enrichment (heuristic fallback when absent) ----
-    llm_provider: str = "auto"  # auto|none|openai|anthropic|ollama
+    llm_provider: str = "auto"  # auto|none|openai|anthropic|ollama|openai_compatible
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-haiku-4.5"
     ollama_url: str | None = None
     ollama_model: str = "llama3.1:8b"
+    # openai_compatible: any /v1/chat/completions endpoint; values live in the
+    # local .env only (gitignored) — never hardcode them anywhere in the repo
+    llm_base_url: str | None = None
+    llm_api_key: str | None = None
+    llm_model: str | None = None
 
     # ---- optional keyed source connectors ----
     newsapi_key: str | None = None

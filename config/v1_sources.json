@@ -1,0 +1,1577 @@
+{
+  "version": 1,
+  "description": "OmniPulse default source registry. Zero-key: every enabled source without 'requires_key' works anonymously. Groups set default cadence; per-source fields override. Add/pause/remove at runtime via /v1/sources or the MCP tools.",
+  "groups": {
+    "A": {
+      "label": "Tier-1 breaking wires & global news",
+      "poll_interval": 20,
+      "min_interval": 10,
+      "max_interval": 300
+    },
+    "B": {
+      "label": "Finance, macro & regulatory filings",
+      "poll_interval": 15,
+      "min_interval": 5,
+      "max_interval": 300
+    },
+    "C": {
+      "label": "AI, technology & science",
+      "poll_interval": 60,
+      "min_interval": 30,
+      "max_interval": 900
+    },
+    "D": {
+      "label": "Crypto & Web3",
+      "poll_interval": 20,
+      "min_interval": 15,
+      "max_interval": 300
+    },
+    "E": {
+      "label": "Cybersecurity & infrastructure",
+      "poll_interval": 45,
+      "min_interval": 30,
+      "max_interval": 900
+    },
+    "F": {
+      "label": "Real-time social & community firehoses",
+      "poll_interval": 120,
+      "min_interval": 60,
+      "max_interval": 900
+    }
+  },
+  "sources": [
+    {
+      "id": "reuters_wire",
+      "name": "Reuters",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:reuters.com+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "Reuters",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reuters_markets",
+      "name": "Reuters Markets",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:reuters.com+(stocks+OR+markets+OR+shares+OR+bonds+OR+oil)+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Equities"
+      ],
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "Reuters",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reuters_world",
+      "name": "Reuters World",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:reuters.com+(war+OR+minister+OR+military+OR+election+OR+president)+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "Reuters",
+        "full_article": false
+      }
+    },
+    {
+      "id": "ap_top",
+      "name": "Associated Press",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:apnews.com+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "AP News",
+        "full_article": false
+      }
+    },
+    {
+      "id": "ap_world",
+      "name": "AP World",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:apnews.com+(world+OR+war+OR+minister+OR+military)+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "AP News",
+        "full_article": false
+      }
+    },
+    {
+      "id": "ap_politics",
+      "name": "AP Politics",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:apnews.com+(congress+OR+senate+OR+election+OR+governor+OR+court)+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "AP News",
+        "full_article": false
+      }
+    },
+    {
+      "id": "bloomberg_markets",
+      "name": "Bloomberg Markets",
+      "type": "rss",
+      "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Equities"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "bloomberg_tech",
+      "name": "Bloomberg Technology",
+      "type": "rss",
+      "url": "https://feeds.bloomberg.com/technology/news.rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "bloomberg_economics",
+      "name": "Bloomberg Economics",
+      "type": "rss",
+      "url": "https://feeds.bloomberg.com/economics/news.rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Macro"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "bloomberg_politics",
+      "name": "Bloomberg Politics",
+      "type": "rss",
+      "url": "https://feeds.bloomberg.com/politics/news.rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "bloomberg_crypto",
+      "name": "Bloomberg Crypto",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:bloomberg.com+(bitcoin+OR+crypto+OR+stablecoin+OR+ether)+when:1h&hl=en-US&gl=US&ceid=US:en",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Crypto"
+      ],
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "Bloomberg",
+        "full_article": false
+      }
+    },
+    {
+      "id": "ft_world",
+      "name": "Financial Times World",
+      "type": "rss",
+      "url": "https://www.ft.com/world?format=rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "ft_markets",
+      "name": "Financial Times Markets",
+      "type": "rss",
+      "url": "https://www.ft.com/markets?format=rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "ft_companies",
+      "name": "Financial Times Companies",
+      "type": "rss",
+      "url": "https://www.ft.com/companies?format=rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "ft_global_economy",
+      "name": "Financial Times Global Economy",
+      "type": "rss",
+      "url": "https://www.ft.com/global-economy?format=rss",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "wsj_markets",
+      "name": "WSJ Markets",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "wsj_world",
+      "name": "WSJ World",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "wsj_tech",
+      "name": "WSJ Technology",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWSJD",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "wsj_economy",
+      "name": "WSJ Economy",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/socialeconomyfeed",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "bbc_world",
+      "name": "BBC News World",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "bbc_business",
+      "name": "BBC News Business",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "bbc_middle_east",
+      "name": "BBC News Middle East",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "bbc_asia",
+      "name": "BBC News Asia",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "bbc_europe",
+      "name": "BBC News Europe",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+      "category": "wire",
+      "credibility_tier": 1,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "aljazeera_all",
+      "name": "Al Jazeera",
+      "type": "rss",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "dw_world",
+      "name": "Deutsche Welle World",
+      "type": "rss",
+      "url": "https://rss.dw.com/rdf/rss-en-world",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "dw_business",
+      "name": "Deutsche Welle Business",
+      "type": "rss",
+      "url": "https://rss.dw.com/rdf/rss-en-bus",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "france24_world",
+      "name": "France 24",
+      "type": "rss",
+      "url": "https://www.france24.com/en/rss",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "france24_mideast",
+      "name": "France 24 Middle East",
+      "type": "rss",
+      "url": "https://www.france24.com/en/middle-east/rss",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "france24_asia",
+      "name": "France 24 Asia-Pacific",
+      "type": "rss",
+      "url": "https://www.france24.com/en/asia-pacific/rss",
+      "category": "wire",
+      "credibility_tier": 2,
+      "group": "A",
+      "default_categories": [
+        "Geopolitics"
+      ]
+    },
+    {
+      "id": "gdelt_global",
+      "name": "GDELT Global Events",
+      "type": "gdelt",
+      "url": "",
+      "category": "aggregator",
+      "credibility_tier": 2,
+      "group": "A",
+      "poll_interval": 300,
+      "min_interval": 120,
+      "max_interval": 900,
+      "params": {
+        "query": "sourcelang:english (theme:ARMEDCONFLICT OR theme:TERROR OR theme:ECON_STOCKMARKET OR theme:NATURAL_DISASTER OR theme:ELECTION)",
+        "timespan": "15min",
+        "maxrecords": 75,
+        "full_article": false
+      }
+    },
+    {
+      "id": "sec_8k",
+      "name": "SEC EDGAR 8-K",
+      "type": "sec_edgar",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&company=&dateb=&owner=include&start=0&count=40&output=atom",
+      "category": "regulatory",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Regulatory"
+      ]
+    },
+    {
+      "id": "sec_form4",
+      "name": "SEC EDGAR Form 4",
+      "type": "sec_edgar",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&company=&dateb=&owner=include&start=0&count=40&output=atom",
+      "category": "regulatory",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Regulatory"
+      ]
+    },
+    {
+      "id": "sec_10q",
+      "name": "SEC EDGAR 10-Q",
+      "type": "sec_edgar",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-Q&company=&dateb=&owner=include&start=0&count=40&output=atom",
+      "category": "regulatory",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Regulatory"
+      ],
+      "poll_interval": 60
+    },
+    {
+      "id": "sec_10k",
+      "name": "SEC EDGAR 10-K",
+      "type": "sec_edgar",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-K&company=&dateb=&owner=include&start=0&count=40&output=atom",
+      "category": "regulatory",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Regulatory"
+      ],
+      "poll_interval": 60
+    },
+    {
+      "id": "sec_13f",
+      "name": "SEC EDGAR 13F",
+      "type": "sec_edgar",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=13F-HR&company=&dateb=&owner=include&start=0&count=40&output=atom",
+      "category": "regulatory",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Regulatory"
+      ],
+      "poll_interval": 120
+    },
+    {
+      "id": "fed_press",
+      "name": "Federal Reserve Press Releases",
+      "type": "rss",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "fed_speeches",
+      "name": "Federal Reserve Speeches",
+      "type": "rss",
+      "url": "https://www.federalreserve.gov/feeds/speeches.xml",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ],
+      "poll_interval": 60
+    },
+    {
+      "id": "ecb_press",
+      "name": "ECB Press",
+      "type": "rss",
+      "url": "https://www.ecb.europa.eu/rss/press.html",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "boj_news",
+      "name": "Bank of Japan",
+      "type": "rss",
+      "url": "https://www.boj.or.jp/en/rss/whatsnew.xml",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "bls_latest",
+      "name": "US Bureau of Labor Statistics",
+      "type": "rss",
+      "url": "https://www.bls.gov/feed/bls_latest.rss",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ],
+      "params": {
+        "contact_ua": true
+      }
+    },
+    {
+      "id": "bea_releases",
+      "name": "US Bureau of Economic Analysis",
+      "type": "rss",
+      "url": "https://apps.bea.gov/rss/rss.xml",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "eurostat_releases",
+      "name": "Eurostat Data Releases",
+      "type": "rss",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/catalogue/rss/en/statistics-update.rss",
+      "category": "macro",
+      "credibility_tier": 1,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ],
+      "poll_interval": 900,
+      "min_interval": 300,
+      "max_interval": 3600,
+      "params": {
+        "max_items_per_poll": 10,
+        "full_article": false
+      }
+    },
+    {
+      "id": "prnewswire_all",
+      "name": "PR Newswire",
+      "type": "rss",
+      "url": "https://www.prnewswire.com/rss/news-releases-list.rss",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "businesswire_all",
+      "name": "Business Wire",
+      "type": "rss",
+      "url": "https://feed.businesswire.com/rss/home/?rss=G1QFDERJXkJeEFtRWA==",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "cnbc_top",
+      "name": "CNBC Top News",
+      "type": "rss",
+      "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "cnbc_markets",
+      "name": "CNBC Investing",
+      "type": "rss",
+      "url": "https://www.cnbc.com/id/15839069/device/rss/rss.html",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "cnbc_economy",
+      "name": "CNBC Economy",
+      "type": "rss",
+      "url": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Macro"
+      ]
+    },
+    {
+      "id": "marketwatch_top",
+      "name": "MarketWatch Top Stories",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "marketwatch_pulse",
+      "name": "MarketWatch Market Pulse",
+      "type": "rss",
+      "url": "https://feeds.content.dowjones.io/public/rss/mw_marketpulse",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "yahoo_finance",
+      "name": "Yahoo Finance",
+      "type": "rss",
+      "url": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC,%5EVIX,CL%3DF,GC%3DF&region=US&lang=en-US",
+      "category": "finance",
+      "credibility_tier": 2,
+      "group": "B",
+      "default_categories": [
+        "Equities"
+      ]
+    },
+    {
+      "id": "polymarket_shifts",
+      "name": "Polymarket",
+      "type": "polymarket",
+      "url": "",
+      "category": "prediction",
+      "credibility_tier": 2,
+      "group": "B",
+      "poll_interval": 30,
+      "min_interval": 15,
+      "max_interval": 120,
+      "params": {
+        "threshold": 0.05,
+        "limit": 150,
+        "min_volume_24h": 50000
+      }
+    },
+    {
+      "id": "kalshi_shifts",
+      "name": "Kalshi",
+      "type": "kalshi",
+      "url": "",
+      "category": "prediction",
+      "credibility_tier": 2,
+      "group": "B",
+      "poll_interval": 30,
+      "min_interval": 15,
+      "max_interval": 120,
+      "params": {
+        "threshold": 0.05,
+        "min_volume": 1000
+      }
+    },
+    {
+      "id": "hn_front",
+      "name": "Hacker News Front Page",
+      "type": "hackernews",
+      "url": "",
+      "category": "community",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "params": {
+        "list": "topstories",
+        "top_n": 30,
+        "min_score": 150,
+        "full_article": true
+      }
+    },
+    {
+      "id": "hn_show",
+      "name": "Show HN",
+      "type": "hackernews",
+      "url": "",
+      "category": "community",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "params": {
+        "list": "showstories",
+        "top_n": 30,
+        "min_score": 80
+      }
+    },
+    {
+      "id": "arxiv_ai",
+      "name": "arXiv cs.AI / cs.LG / cs.CL",
+      "type": "rss",
+      "url": "https://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL",
+      "category": "science",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech",
+        "Science"
+      ],
+      "poll_interval": 600,
+      "min_interval": 300,
+      "max_interval": 3600,
+      "params": {
+        "max_items_per_poll": 40,
+        "full_article": false
+      }
+    },
+    {
+      "id": "arxiv_qfin",
+      "name": "arXiv q-fin",
+      "type": "rss",
+      "url": "https://rss.arxiv.org/rss/q-fin",
+      "category": "science",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "Science",
+        "Macro"
+      ],
+      "poll_interval": 900,
+      "min_interval": 300,
+      "max_interval": 3600,
+      "params": {
+        "max_items_per_poll": 20,
+        "full_article": false
+      }
+    },
+    {
+      "id": "techcrunch",
+      "name": "TechCrunch",
+      "type": "rss",
+      "url": "https://techcrunch.com/feed/",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "the_verge",
+      "name": "The Verge",
+      "type": "rss",
+      "url": "https://www.theverge.com/rss/index.xml",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "ars_technica",
+      "name": "Ars Technica",
+      "type": "rss",
+      "url": "https://feeds.arstechnica.com/arstechnica/index",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "wired",
+      "name": "WIRED",
+      "type": "rss",
+      "url": "https://www.wired.com/feed/rss",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "mit_tech_review",
+      "name": "MIT Technology Review",
+      "type": "rss",
+      "url": "https://www.technologyreview.com/feed/",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "semianalysis",
+      "name": "SemiAnalysis",
+      "type": "rss",
+      "url": "https://newsletter.semianalysis.com/feed",
+      "category": "tech",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 600
+    },
+    {
+      "id": "openai_news",
+      "name": "OpenAI News",
+      "type": "rss",
+      "url": "https://openai.com/news/rss.xml",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "anthropic_news",
+      "name": "Anthropic News",
+      "type": "rss",
+      "url": "https://news.google.com/rss/search?q=site:anthropic.com+when:7d&hl=en-US&gl=US&ceid=US:en",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 300,
+      "params": {
+        "aggregator": "gnews",
+        "publisher": "Anthropic",
+        "full_article": false
+      }
+    },
+    {
+      "id": "deepmind_blog",
+      "name": "Google DeepMind Blog",
+      "type": "rss",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "google_ai_blog",
+      "name": "Google AI Blog",
+      "type": "rss",
+      "url": "https://blog.google/technology/ai/rss/",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "meta_engineering",
+      "name": "Meta Engineering & AI",
+      "type": "rss",
+      "url": "https://engineering.fb.com/feed/",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "huggingface_blog",
+      "name": "Hugging Face Blog",
+      "type": "rss",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "nvidia_newsroom",
+      "name": "NVIDIA Newsroom",
+      "type": "rss",
+      "url": "https://nvidianews.nvidia.com/releases.xml",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "nvidia_blog",
+      "name": "NVIDIA Blog",
+      "type": "rss",
+      "url": "https://blogs.nvidia.com/feed/",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ]
+    },
+    {
+      "id": "github_trending",
+      "name": "GitHub Trending",
+      "type": "github_trending",
+      "url": "https://github.com/trending",
+      "category": "community",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 900,
+      "min_interval": 600,
+      "max_interval": 3600,
+      "params": {
+        "since": "daily",
+        "min_stars_today": 150
+      }
+    },
+    {
+      "id": "gh_ollama",
+      "name": "Ollama Releases",
+      "type": "rss",
+      "url": "https://github.com/ollama/ollama/releases.atom",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 300,
+      "min_interval": 120
+    },
+    {
+      "id": "gh_vllm",
+      "name": "vLLM Releases",
+      "type": "rss",
+      "url": "https://github.com/vllm-project/vllm/releases.atom",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 300,
+      "min_interval": 120
+    },
+    {
+      "id": "gh_transformers",
+      "name": "Transformers Releases",
+      "type": "rss",
+      "url": "https://github.com/huggingface/transformers/releases.atom",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 300,
+      "min_interval": 120
+    },
+    {
+      "id": "gh_llamacpp",
+      "name": "llama.cpp Releases",
+      "type": "rss",
+      "url": "https://github.com/ggml-org/llama.cpp/releases.atom",
+      "category": "ai_lab",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 600,
+      "min_interval": 300,
+      "params": {
+        "max_items_per_poll": 3
+      }
+    },
+    {
+      "id": "nature_news",
+      "name": "Nature",
+      "type": "rss",
+      "url": "https://www.nature.com/nature.rss",
+      "category": "science",
+      "credibility_tier": 1,
+      "group": "C",
+      "default_categories": [
+        "Science"
+      ],
+      "poll_interval": 300
+    },
+    {
+      "id": "sciencedaily",
+      "name": "ScienceDaily",
+      "type": "rss",
+      "url": "https://www.sciencedaily.com/rss/top/science.xml",
+      "category": "science",
+      "credibility_tier": 2,
+      "group": "C",
+      "default_categories": [
+        "Science"
+      ],
+      "poll_interval": 300
+    },
+    {
+      "id": "coindesk",
+      "name": "CoinDesk",
+      "type": "rss",
+      "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ]
+    },
+    {
+      "id": "theblock",
+      "name": "The Block",
+      "type": "rss",
+      "url": "https://www.theblock.co/rss.xml",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ]
+    },
+    {
+      "id": "decrypt",
+      "name": "Decrypt",
+      "type": "rss",
+      "url": "https://decrypt.co/feed",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ]
+    },
+    {
+      "id": "blockworks",
+      "name": "Blockworks",
+      "type": "rss",
+      "url": "https://blockworks.co/feed",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ]
+    },
+    {
+      "id": "cointelegraph",
+      "name": "Cointelegraph",
+      "type": "rss",
+      "url": "https://cointelegraph.com/rss",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ]
+    },
+    {
+      "id": "whale_alert",
+      "name": "Whale Alert",
+      "type": "whale_alert",
+      "url": "",
+      "category": "crypto",
+      "credibility_tier": 2,
+      "group": "D",
+      "default_categories": [
+        "Crypto"
+      ],
+      "requires_key": "whale_alert_key",
+      "poll_interval": 30,
+      "params": {
+        "min_value": 10000000
+      }
+    },
+    {
+      "id": "cisa_advisories",
+      "name": "CISA Advisories",
+      "type": "rss",
+      "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+      "category": "security",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "id": "cisa_kev",
+      "name": "CISA Known Exploited Vulnerabilities",
+      "type": "cisa_kev",
+      "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+      "category": "security",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "poll_interval": 300,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "days": 3
+      }
+    },
+    {
+      "id": "nvd_cves",
+      "name": "NIST NVD (CVSS >= 7)",
+      "type": "nvd",
+      "url": "",
+      "category": "security",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "poll_interval": 120,
+      "min_interval": 60,
+      "max_interval": 900,
+      "params": {
+        "min_cvss": 7.0
+      }
+    },
+    {
+      "id": "bleepingcomputer",
+      "name": "BleepingComputer",
+      "type": "rss",
+      "url": "https://www.bleepingcomputer.com/feed/",
+      "category": "security",
+      "credibility_tier": 2,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "id": "krebsonsecurity",
+      "name": "KrebsOnSecurity",
+      "type": "rss",
+      "url": "https://krebsonsecurity.com/feed/",
+      "category": "security",
+      "credibility_tier": 2,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "id": "thehackernews",
+      "name": "The Hacker News",
+      "type": "rss",
+      "url": "https://feeds.feedburner.com/TheHackersNews",
+      "category": "security",
+      "credibility_tier": 2,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "id": "darkreading",
+      "name": "Dark Reading",
+      "type": "rss",
+      "url": "https://www.darkreading.com/rss.xml",
+      "category": "security",
+      "credibility_tier": 2,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ]
+    },
+    {
+      "id": "status_aws",
+      "name": "AWS Health",
+      "type": "rss",
+      "url": "https://status.aws.amazon.com/rss/all.rss",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "status_cloudflare",
+      "name": "Cloudflare Status",
+      "type": "rss",
+      "url": "https://www.cloudflarestatus.com/history.atom",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "status_github",
+      "name": "GitHub Status",
+      "type": "rss",
+      "url": "https://www.githubstatus.com/history.atom",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "status_openai",
+      "name": "OpenAI Status",
+      "type": "rss",
+      "url": "https://status.openai.com/feed.rss",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "status_anthropic",
+      "name": "Anthropic Status",
+      "type": "rss",
+      "url": "https://status.anthropic.com/history.atom",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "status_vercel",
+      "name": "Vercel Status",
+      "type": "rss",
+      "url": "https://www.vercel-status.com/history.atom",
+      "category": "status",
+      "credibility_tier": 1,
+      "group": "E",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "params": {
+        "full_article": false
+      }
+    },
+    {
+      "id": "bluesky_breaking",
+      "name": "Bluesky",
+      "type": "bluesky",
+      "url": "wss://jetstream2.us-east.bsky.network/subscribe",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "params": {
+        "langs": [
+          "en"
+        ],
+        "min_length": 40,
+        "max_per_minute": 30,
+        "dids": [],
+        "only_dids": false,
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_worldnews",
+      "name": "r/worldnews",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/worldnews/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_localllama",
+      "name": "r/LocalLLaMA",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/LocalLLaMA/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_machinelearning",
+      "name": "r/MachineLearning",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/MachineLearning/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "AI/Tech"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_wallstreetbets",
+      "name": "r/wallstreetbets",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/wallstreetbets/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "Equities"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_economics",
+      "name": "r/Economics",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/Economics/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "Macro"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_netsec",
+      "name": "r/netsec",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/netsec/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "Cybersecurity"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "reddit_geopolitics",
+      "name": "r/geopolitics",
+      "type": "rss",
+      "url": "https://www.reddit.com/r/geopolitics/new/.rss",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "default_categories": [
+        "Geopolitics"
+      ],
+      "poll_interval": 180,
+      "min_interval": 120,
+      "max_interval": 1800,
+      "params": {
+        "aggregator": "reddit",
+        "full_article": false
+      }
+    },
+    {
+      "id": "telegram_example",
+      "name": "Telegram channel (template)",
+      "type": "telegram",
+      "url": "",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "enabled": false,
+      "params": {
+        "channel": "durov",
+        "full_article": false
+      }
+    },
+    {
+      "id": "newsapi_top",
+      "name": "NewsAPI Top Headlines",
+      "type": "newsapi",
+      "url": "",
+      "category": "aggregator",
+      "credibility_tier": 2,
+      "group": "A",
+      "requires_key": "newsapi_key",
+      "poll_interval": 300,
+      "min_interval": 120,
+      "params": {
+        "language": "en",
+        "category": "general"
+      }
+    },
+    {
+      "id": "x_list",
+      "name": "X / Twitter List",
+      "type": "x_list",
+      "url": "",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "requires_key": "x_bearer_token",
+      "enabled": false,
+      "poll_interval": 120,
+      "params": {
+        "list_id": "REPLACE_WITH_LIST_ID"
+      }
+    },
+    {
+      "id": "discord_inbox",
+      "name": "Discord / Webhook Inbox",
+      "type": "webhook",
+      "url": "",
+      "category": "social",
+      "credibility_tier": 3,
+      "group": "F",
+      "params": {
+        "secret": "",
+        "full_article": false
+      }
+    }
+  ]
+}

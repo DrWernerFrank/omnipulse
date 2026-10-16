@@ -14,3 +14,5 @@ telethon.session*
 .pytest_cache/
 smoke_out.txt
 uvicorn_out.txt
+uvicorn_v1_out.txt
+vite_v1_out.txt

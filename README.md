@@ -12,21 +12,39 @@ Two audiences, one engine:
    server-side filtering. Zero HTML overhead, ~85% token reduction in compact mode.
 
 **Zero-key boot:** `docker compose up` starts streaming live global news
-immediately. 71 pre-configured sources — wires, SEC EDGAR, central banks,
-prediction markets, ArXiv, Hacker News, CVE feeds, cloud status pages, Reddit,
-Bluesky firehose — all no-API-key. Optional OpenAI / Anthropic / Ollama keys add
-LLM headline refinement on top of the always-on local heuristic NLP pipeline.
+immediately. 105 pre-configured sources — wires, SEC EDGAR, central banks,
+prediction markets, ArXiv, Hacker News, CVE/KEV feeds, cloud status pages, Reddit,
+Bluesky firehose, keyless Telegram web preview — all no-API-key. Optional
+OpenAI / Anthropic / Ollama / any-OpenAI-compatible keys add LLM headline
+refinement on top of the always-on local heuristic NLP pipeline.
+
+**Two engine profiles, one repo** (this is a merge of two OmniPulse
+generations — pick per deployment, since only one engine can own the process):
+
+| | **v2** (default) | **v1** |
+|---|---|---|
+| Engine | fast in-process pipeline, numpy cluster index | Redis-Streams pipeline, sharded engine |
+| Store | Postgres/Timescale + in-memory fallback | TimescaleDB hypertable + pgvector (lite: memory) |
+| API | `/api/*`, `/ws`, `/stream/*` | `/v1/*` |
+| MCP | stdio (`python -m app.mcp_server`) | streamable HTTP `/mcp` (11 tools, `wait_for_events`) |
+| Terminal | `frontend/` — tape + palette, port 3000/5173 | `frontend_v1/` — tiling multi-pane, port 5174 |
+| Config | `OMNIPULSE_*` | `OMNI_*` |
+
+```bash
+OMNIPULSE_PROFILE=v2   # default
+OMNIPULSE_PROFILE=v1   # the merged original architecture
+```
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  sources (71)          ingestion engine          consumers           │
+│  sources (105)         ingestion engine          consumers           │
 │                                                                        │
 │  RSS/Atom ─┐                                                      ┌─▶ WS /ws (filtered)      │
 │  JSON APIs ─┼─▶ HttpPool ─▶ connectors ─▶ pipeline ─▶ bus ─▶ SSE /stream/*   │
 │  WebScrape ─┘   (rate-limit,    (SimHash dedup,  (Redis        ├─▶ REST /api/*            │
 │  Bluesky WS ─▶  conditional,     embed + cluster,  Streams +     │    (+ keyset pagination) │
 │  Telegram  ─▶  backoff+jitter)  enrich, novelty)   pub/sub)      ├─▶ MCP server (stdio)     │
-│                                                             └─▶ Terminal UI (React)     │
+│  Webhooks ◀─┘                                            └─▶ Terminal UI (React)     │
 │                                             │                           │
 │                                             └─▶ PostgreSQL + TimescaleDB + pgvector       │
 │                                                 (hypertable events · vector clusters ·     │
@@ -69,6 +87,32 @@ uvicorn app.main:app --port 8000
 
 cd ../frontend && npm install && npm run dev   # terminal at :5173 (proxied)
 ```
+
+### Running the v1 profile (merged original engine)
+
+The v1 backend, its tiling terminal and its 109-source registry ship in the
+same repo and boot from the same process — flip one setting. `OMNI_MODE=lite`
+runs it with zero infrastructure (in-memory bus + store):
+
+```bash
+cd backend
+set OMNIPULSE_PROFILE=v1
+set OMNI_MODE=lite
+uvicorn app.main:app --port 8000            # /v1/*, /healthz, HTTP MCP at /mcp
+
+cd ../frontend_v1 && npm install && npm run dev   # tiling terminal at :5174
+```
+
+Docker, v1 architecture at full scale (Redis Streams + Timescale + sharding):
+
+```bash
+OMNIPULSE_PROFILE=v1 TERMINAL_DIR=frontend_v1 docker compose up -d --build
+# v1 MCP: claude mcp add --transport http omnipulse http://localhost:8000/mcp
+```
+
+Both terminals can run side by side (`:5173` v2, `:5174` v1) — but only one
+backend profile can own port 8000, so restart the backend with the other
+`OMNIPULSE_PROFILE` to switch engines.
 
 ### Agent stack (MCP)
 
@@ -327,18 +371,42 @@ Everything is an env var (prefix `OMNIPULSE_`), all optional. See
 
 | Var | Default | Meaning |
 |---|---|---|
+| `OMNIPULSE_PROFILE` | `v2` | engine profile: `v2` (default) or `v1` (merged original architecture) |
 | `OMNIPULSE_API_KEY` | unset | optional guard on /api and streams |
 | `OMNIPULSE_DATABASE_URL` | unset | Postgres DSN (unset → memory store) |
 | `OMNIPULSE_REDIS_URL` | unset | Redis URL (unset → local bus) |
-| `OMNIPULSE_LLM_PROVIDER` | `auto` | `auto\|none\|openai\|anthropic\|ollama` |
+| `OMNIPULSE_LLM_PROVIDER` | `auto` | `auto\|none\|openai\|anthropic\|ollama\|openai_compatible` |
+| `OMNIPULSE_LLM_BASE_URL` | unset | openai_compatible: any `/v1/chat/completions` endpoint (local .env only) |
+| `OMNIPULSE_LLM_API_KEY` | unset | openai_compatible: bearer key (local .env only) |
+| `OMNIPULSE_LLM_MODEL` | unset | openai_compatible: model id (local .env only) |
 | `OMNIPULSE_CLUSTER_SIMILARITY` | `0.88` | StoryCluster join threshold |
 | `OMNIPULSE_PER_HOST_RATE` | `2.0` | req/sec per host (politeness) |
-| `OMNIPULSE_SOURCES_FILE` | `config/default_sources.json` | seed registry |
+| `OMNIPULSE_SOURCES_FILE` | `config/default_sources.json` | seed registry (105 sources) |
 | `OMNIPULSE_HTTP2` | `true` | HTTP/2 for feed fetches (ALPN-negotiated) |
 | `OMNIPULSE_KEEPALIVE_EXPIRY_SEC` | `300` | warm-connection lifetime; amortizes TLS handshakes across poll cycles |
 | `OMNIPULSE_POLL_TICK_SEC` | `0.1` | scheduler wake-up granularity |
 | `OMNIPULSE_CLUSTER_CANDIDATE_CAP` | `600` | clusters compared per event (numpy matvec) |
 | `OMNIPULSE_WEBSUB_ENABLED` | `false` | WebSub push delivery (needs a public `OMNIPULSE_PUBLIC_URL`) |
+
+The v1 profile has its own `OMNI_*` namespace (`OMNI_MODE=lite|full`,
+`OMNI_SOURCES_FILE=config/v1_sources.json`, `OMNI_EMBEDDER`,
+`OMNI_LLM_*`, …) documented in
+[`omnipulse/backend/omnipulse/settings.py`](backend/omnipulse/settings.py).
+
+**Secret hygiene:** LLM endpoint URLs, API keys and model ids are
+env-configurable but never hardcoded — keep real values only in your
+gitignored local `.env` (both `backend/.env` for bare metal and `.env` for
+docker compose are ignored by git).
+
+### Merged-in v1 features (available in the v2 profile too)
+
+* **Query DSL** on every agent surface — `?dsl=` on REST/WS/SSE:
+  `u>=7 cat:crypto,macro $NVDA tier<=2 vs:confirmed "rate cut" -opinion`
+* **Headline wire format** — `GET /api/events?format=headline` (one line per event)
+* **Outbound webhooks** — `POST /api/webhooks {url, secret, dsl}`; HMAC-signed
+  (`X-OmniPulse-Signature: sha256=…`), 3 retries, auto-deactivate after 5 failures
+* **CISA KEV + keyless Telegram web-preview connectors** (`type=cisa_kev`,
+  `type=telegram_web`) — 34 v1 sources merged into the default registry (105 total)
 
 ## Latency budget
 

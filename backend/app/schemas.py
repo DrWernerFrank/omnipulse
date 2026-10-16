@@ -174,6 +174,22 @@ class SourceConfig(BaseModel):
         return max(self.min_poll_sec, min(self.poll_interval_sec, self.max_poll_sec))
 
 
+class WebhookConfig(BaseModel):
+    """Outbound webhook registration (merged from v1; wire-compatible headers)."""
+
+    id: str
+    url: str
+    secret: str = ""  # enables X-OmniPulse-Signature: sha256=<hmac body>
+    dsl: str | None = None  # terminal query DSL filter; None = all events
+    active: bool = True
+    created_at: datetime = Field(default_factory=now_utc)
+    delivered: int = 0
+    failures: int = 0
+    last_status: int | None = None
+    last_delivery_at: datetime | None = None
+    last_error: str | None = None
+
+
 class SourceStateMessage(BaseModel):
     source_id: str
     name: str
@@ -206,6 +222,7 @@ class FilterSpec(BaseModel):
     """Unified filter model for REST, WS subscriptions and SSE channels."""
 
     q: str | None = None
+    dsl: str | None = None  # terminal query DSL (u>=7 cat:crypto $NVDA -opinion); merged from v1
     categories: list[str] | None = None
     tickers: list[str] | None = None
     sources: list[str] | None = None
@@ -222,6 +239,11 @@ class FilterSpec(BaseModel):
 
     def match_dict(self, d: dict[str, Any]) -> bool:
         enr = d.get("enrichment") or {}
+        if self.dsl:
+            from .dsl import parse_dsl
+
+            if not parse_dsl(self.dsl).matches(d):
+                return False
         if self.categories and not (set(self.categories) & set(enr.get("categories") or [])):
             return False
         if self.tickers and not (set(self.tickers) & set(enr.get("tickers") or [])):

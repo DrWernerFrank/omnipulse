@@ -63,6 +63,8 @@ class Enricher:
             return "anthropic" if s.anthropic_api_key else None
         if self.llm_provider == "ollama":
             return "ollama" if s.ollama_url else None
+        if self.llm_provider == "openai_compatible":
+            return "openai_compatible" if (s.llm_base_url and s.llm_api_key and s.llm_model) else None
         # auto
         if s.openai_api_key:
             return "openai"
@@ -70,6 +72,8 @@ class Enricher:
             return "anthropic"
         if s.ollama_url:
             return "ollama"
+        if s.llm_base_url and s.llm_api_key and s.llm_model:
+            return "openai_compatible"
         return None
 
     # ------------------------------------------------------------------ #
@@ -310,9 +314,33 @@ class LLMRefiner:
                 return await self._anthropic(payload)
             if self.provider == "ollama":
                 return await self._ollama(payload)
+            if self.provider == "openai_compatible":
+                return await self._openai_compatible(payload)
         except Exception as e:
             log.debug("llm refine failed (%s): %s", self.provider, e)
         return None
+
+    async def _openai_compatible(self, p: dict[str, Any]) -> dict[str, Any] | None:
+        """Any OpenAI-shaped /v1/chat/completions endpoint.
+
+        base URL / key / model come from OMNIPULSE_LLM_BASE_URL /
+        OMNIPULSE_LLM_API_KEY / OMNIPULSE_LLM_MODEL — env or local .env only,
+        never hardcoded (they must not appear in the repo).
+        """
+        s = get_settings()
+        async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as c:
+            r = await c.post(
+                f"{s.llm_base_url.rstrip('/')}/chat/completions",
+                headers={"Authorization": f"Bearer {s.llm_api_key}"},
+                json={
+                    "model": s.llm_model,
+                    "messages": [{"role": "system", "content": LLM_SYSTEM}, *self._body_messages(p)],
+                    "temperature": 0.1,
+                    "response_format": {"type": "json_object"},
+                },
+            )
+            r.raise_for_status()
+            return self._parse(r.json()["choices"][0]["message"]["content"])
 
     async def _openai(self, p: dict[str, Any]) -> dict[str, Any] | None:
         s = get_settings()

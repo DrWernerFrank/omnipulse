@@ -8,6 +8,7 @@ Agent endpoints (all JSON, all filterable):
   GET  /api/events.jsonl      (batch snapshot as newline-delimited JSON)
   GET  /api/clusters          (+ /api/clusters/{id}, /api/clusters/{id}/events)
   GET  /api/sources           (+ POST/PATCH/DELETE /api/sources, /api/sources/{id}/pause|resume)
+  GET  /api/webhooks          (+ POST/PATCH/DELETE — outbound delivery, merged from v1)
   GET  /api/stats, /api/dlq, /api/health
   GET  /api/schema            (the canonical NewsEvent JSON schema doc)
   GET  /openapi.json          (hand-written OpenAPI 3.1)
@@ -26,7 +27,7 @@ from typing import Any
 
 import orjson
 from fastapi import APIRouter, Body, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 
 from .bus import Bus
 from .config import get_settings
@@ -39,6 +40,7 @@ from .schemas import (
     SourceConfig,
 )
 from .websub import verify_signature
+from .webhooks import WebhookDispatcher
 
 router = APIRouter()
 
@@ -77,6 +79,7 @@ def _filter_from_request(request: Request, limit_default: int = 100) -> FilterSp
     q = request.query_params
     return FilterSpec(
         q=q.get("q"),
+        dsl=q.get("dsl"),
         categories=[c for c in (q.get("categories") or "").split(",") if c],
         tickers=[t.upper() for t in (q.get("tickers") or "").split(",") if t],
         sources=[s for s in (q.get("sources") or "").split(",") if s],
@@ -111,6 +114,15 @@ async def list_events(request: Request):
     _check_key(request)
     f = _filter_from_request(request)
     events = await _store(request.app).query_events(f)
+    if request.query_params.get("format") == "headline":
+        # one-line wire format (merged from v1): HH:MM:SSz U7 +0.12 [Reuters|T1] ... $NVDA (Macro)
+        from .dsl import headline_line
+
+        text = "\n".join(headline_line(e.model_dump(mode="json")) for e in events)
+        return PlainTextResponse(
+            text + ("\n" if text else ""),
+            headers={"X-Result-Count": str(len(events))},
+        )
     payload = [_event_response(e, f.compact) for e in events]
     resp = Response(orjson.dumps(payload), media_type="application/json")
     next_cursor = events[-1].event_id if len(events) >= f.limit else None
@@ -296,9 +308,68 @@ async def health(request: Request):
     return {
         "ok": True,
         "ts": datetime.now(timezone.utc).isoformat(),
+        "profile": get_settings().profile,
         "sources_online": sum(1 for m in eng.source_states() if m.health in ("ok", "degraded")),
         "sources_total": len(eng.sources),
     }
+
+
+# --------------------------------------------------------------------------- #
+# outbound webhooks (merged from v1)
+# --------------------------------------------------------------------------- #
+def _webhooks(app) -> "WebhookDispatcher":
+    hooks = getattr(app.state, "webhooks", None)
+    if hooks is None:
+        raise HTTPException(503, "webhook dispatcher not running")
+    return hooks
+
+
+@router.get("/api/webhooks")
+async def list_webhooks(request: Request):
+    _check_key(request)
+    return [_webhooks(request.app).public_view(h) for h in _webhooks(request.app).hooks.values()]
+
+
+@router.post("/api/webhooks", status_code=201)
+async def register_webhook(request: Request):
+    _check_key(request)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "invalid JSON body")
+    url = (body.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(422, "url must be an http(s) endpoint")
+    hook = await _webhooks(request.app).register(
+        url,
+        secret=body.get("secret") or "",
+        dsl=body.get("dsl") or None,
+    )
+    return _webhooks(request.app).public_view(hook)
+
+
+@router.patch("/api/webhooks/{hook_id}")
+async def update_webhook(hook_id: str, request: Request):
+    _check_key(request)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "invalid JSON body")
+    if "active" not in body:
+        raise HTTPException(422, "body must include 'active' (bool)")
+    hook = await _webhooks(request.app).set_active(hook_id, bool(body["active"]))
+    if hook is None:
+        raise HTTPException(404, "webhook not found")
+    return _webhooks(request.app).public_view(hook)
+
+
+@router.delete("/api/webhooks/{hook_id}")
+async def delete_webhook(hook_id: str, request: Request):
+    _check_key(request)
+    ok = await _webhooks(request.app).remove(hook_id)
+    if not ok:
+        raise HTTPException(404, "webhook not found")
+    return {"deleted": hook_id}
 
 
 @router.get("/api/schema")
@@ -333,6 +404,7 @@ async def ws_firehose(ws: WebSocket):
     else:
         filters = FilterSpec(
             q=ws.query_params.get("q"),
+            dsl=ws.query_params.get("dsl"),
             categories=[c for c in (ws.query_params.get("categories") or "").split(",") if c],
             tickers=[t.upper() for t in (ws.query_params.get("tickers") or "").split(",") if t],
             sources=[s for s in (ws.query_params.get("sources") or "").split(",") if s],
@@ -365,6 +437,7 @@ async def ws_firehose(ws: WebSocket):
                     continue
                 # mutate the live filter in place; sender's queue is untouched
                 filters.q = new_filters.q
+                filters.dsl = new_filters.dsl
                 filters.categories = new_filters.categories
                 filters.tickers = new_filters.tickers
                 filters.sources = new_filters.sources

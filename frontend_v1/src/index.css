@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #06080a;
+  --color-panel: #0b0f13;
+  --color-panel2: #11171d;
+  --color-line: #1c242c;
+  --color-dim: #6c7884;
+  --color-text: #c4cdd6;
+  --color-bright: #f3f6f9;
+  --color-amber: #ffb000;
+  --color-up: #2fd47a;
+  --color-down: #ff4d4f;
+  --color-cyan: #45c4ff;
+  --color-violet: #b48cff;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", "Cascadia Mono", ui-monospace, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-amber) 35%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+.row-flash {
+  animation: row-flash 2.4s ease-out;
+}
+@keyframes row-flash {
+  0% { background: color-mix(in srgb, var(--color-amber) 38%, transparent); }
+  100% { background: transparent; }
+}
+.row-flash-red {
+  animation: row-flash-red 3s ease-out;
+}
+@keyframes row-flash-red {
+  0% { background: color-mix(in srgb, var(--color-down) 45%, transparent); }
+  100% { background: transparent; }
+}
+.blink {
+  animation: blink 1.2s steps(2, start) infinite;
+}
+@keyframes blink {
+  to { visibility: hidden; }
+}
+
+/* Markdown reader */
+.md { color: var(--color-text); font-size: 12.5px; line-height: 1.6; }
+.md h1, .md h2, .md h3, .md h4 { color: var(--color-bright); font-weight: 700; margin: 0.9em 0 0.35em; }
+.md h1 { font-size: 15px; } .md h2 { font-size: 14px; } .md h3, .md h4 { font-size: 13px; }
+.md p { margin: 0.5em 0; }
+.md a { color: var(--color-cyan); text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+.md ul, .md ol { padding-left: 1.4em; margin: 0.4em 0; }
+.md ul { list-style: square; } .md ol { list-style: decimal; }
+.md blockquote { border-left: 2px solid var(--color-amber); padding-left: 0.8em; color: var(--color-dim); margin: 0.6em 0; }
+.md code { background: var(--color-panel2); padding: 0 0.3em; }
+.md pre { background: var(--color-panel2); padding: 0.6em; overflow-x: auto; }
+.md table { border-collapse: collapse; margin: 0.6em 0; }
+.md td, .md th { border: 1px solid var(--color-line); padding: 2px 6px; }
+.md img { display: none; }
+
+/* Phones / narrow windows: stack panes and let the page scroll */
+@media (max-width: 899px) {
+  .omni-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+    grid-auto-rows: 72vh;
+    overflow-y: auto;
+  }
+  .omni-grid > section {
+    grid-area: auto !important;
+  }
+}

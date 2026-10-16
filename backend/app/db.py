@@ -24,6 +24,7 @@ from .schemas import (
     FilterSpec,
     NewsEvent,
     SourceConfig,
+    WebhookConfig,
     now_utc,
 )
 
@@ -99,6 +100,12 @@ CREATE TABLE IF NOT EXISTS dlq (
   ts TIMESTAMPTZ NOT NULL DEFAULT now(),
   detail JSONB
 );
+
+CREATE TABLE IF NOT EXISTS webhooks (
+  id TEXT PRIMARY KEY,
+  cfg JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 _POST_DDL = """
@@ -135,6 +142,9 @@ class Store(Protocol):
     async def add_dlq(self, source_id: str, error: str, detail: dict | None = None) -> None: ...
     async def list_dlq(self, limit: int = 50) -> list[dict]: ...
     async def stats(self) -> dict[str, Any]: ...
+    async def list_webhooks(self) -> list[WebhookConfig]: ...
+    async def save_webhook(self, cfg: WebhookConfig) -> None: ...
+    async def delete_webhook(self, hook_id: str) -> bool: ...
 
 
 # --------------------------------------------------------------------------- #
@@ -436,6 +446,30 @@ class PgStore:
                 for r in rows
             ]
 
+    # ---- webhooks ----
+    async def list_webhooks(self) -> list[WebhookConfig]:
+        async with self.pool.acquire() as c:
+            rows = await c.fetch("SELECT cfg FROM webhooks ORDER BY updated_at")
+            out: list[WebhookConfig] = []
+            for r in rows:
+                try:
+                    out.append(WebhookConfig.model_validate(r["cfg"] if not isinstance(r["cfg"], str) else json.loads(r["cfg"])))
+                except Exception as e:
+                    log.warning("skipping corrupt webhook row: %s", e)
+            return out
+
+    async def save_webhook(self, cfg: WebhookConfig) -> None:
+        async with self.pool.acquire() as c:
+            await c.execute(
+                "INSERT INTO webhooks (id, cfg, updated_at) VALUES ($1, $2, now()) "
+                "ON CONFLICT (id) DO UPDATE SET cfg = $2, updated_at = now()",
+                cfg.id, json.dumps(cfg.model_dump(mode="json")),
+            )
+
+    async def delete_webhook(self, hook_id: str) -> bool:
+        async with self.pool.acquire() as c:
+            return (await c.execute("DELETE FROM webhooks WHERE id = $1", hook_id))[-1] == "1"
+
     # ---- stats ----
     async def stats(self) -> dict[str, Any]:
         async with self.pool.acquire() as c:
@@ -481,6 +515,7 @@ class MemoryStore:
         self._cluster_order: deque[str] = deque()  # ids in latest_at order (approximate)
         self._sources: dict[str, SourceConfig] = {}
         self._dlq: deque[dict] = deque(maxlen=500)
+        self._webhooks: dict[str, WebhookConfig] = {}
 
     async def close(self) -> None: ...
 
@@ -579,6 +614,16 @@ class MemoryStore:
 
     async def list_dlq(self, limit: int = 50) -> list[dict]:
         return list(self._dlq)[:limit]
+
+    # ---- webhooks ----
+    async def list_webhooks(self) -> list[WebhookConfig]:
+        return sorted(self._webhooks.values(), key=lambda h: h.created_at, reverse=True)
+
+    async def save_webhook(self, cfg: WebhookConfig) -> None:
+        self._webhooks[cfg.id] = cfg
+
+    async def delete_webhook(self, hook_id: str) -> bool:
+        return self._webhooks.pop(hook_id, None) is not None
 
     async def stats(self) -> dict[str, Any]:
         # single reversed pass with early exit — O(recent) instead of O(buffer)

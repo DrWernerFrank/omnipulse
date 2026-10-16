@@ -16,6 +16,8 @@ Connector selection is by SourceConfig.type:
   reddit             -> Reddit JSON listing (public .json endpoints)
   cloud_status       -> status-page RSS (typed via rss; alias kept for clarity)
   html               -> generic page scraper -> <a> link extraction (labs w/o RSS)
+  cisa_kev           -> CISA Known Exploited Vulnerabilities catalog (merged from v1)
+  telegram_web       -> public Telegram channels via t.me/s/ preview, no keys (merged from v1)
   bluesky            -> Bluesky Jetstream websocket firehose (stream connector)
   telegram           -> optional Telethon listener (requires api id/hash)
 """
@@ -30,6 +32,7 @@ from urllib.parse import quote_plus
 
 import feedparser
 import orjson
+from bs4 import BeautifulSoup
 
 from .http import HttpPool
 from .schemas import RawItem, SourceConfig, now_utc
@@ -594,6 +597,118 @@ async def _html_links(cfg: SourceConfig) -> ConnectResult:
 
 
 # --------------------------------------------------------------------------- #
+# CISA KEV catalog (merged from v1)
+# --------------------------------------------------------------------------- #
+async def _cisa_kev(cfg: SourceConfig) -> ConnectResult:
+    pool = HttpPool.get()
+    url = cfg.url or "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    data = await pool.fetch_json(url, source_headers=cfg.headers, source_id=cfg.id)
+    if not isinstance(data, dict):
+        raise ConnectionError(f"fetch failed: {url}")
+    days = int(cfg.params.get("days", 3))
+    horizon = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
+    items: ConnectResult = []
+    for v in data.get("vulnerabilities", []):
+        if str(v.get("dateAdded", "")) < horizon:
+            continue
+        cid = str(v.get("cveID", "")).strip()
+        if not cid:
+            continue
+        ransomware = str(v.get("knownRansomwareCampaignUse", "")).lower() == "known"
+        title = (
+            f"CISA adds actively exploited {cid} to KEV: {v.get('vendorProject', '')} "
+            f"{v.get('product', '')} — {v.get('vulnerabilityName', '')}"
+        ).strip()
+        summary = (
+            f"{v.get('shortDescription', '')}. Required action: {v.get('requiredAction', '')} "
+            f"Due date: {v.get('dueDate', '')}."
+            + (" Known use in ransomware campaigns." if ransomware else "")
+        )
+        published = None
+        try:
+            published = datetime.fromisoformat(str(v.get("dateAdded", "")) + "T00:00:00+00:00")
+        except ValueError:
+            pass
+        items.append(
+            RawItem(
+                source_id=cfg.id,
+                external_id=f"kev:{cid}",
+                title=title,
+                url=f"https://nvd.nist.gov/vuln/detail/{cid}",
+                published_at=published,
+                body_text=summary,
+                extra={"hint_categories": ["Cybersecurity"]},
+            )
+        )
+    return items[: cfg.params.get("max_items", 25)]
+
+
+# --------------------------------------------------------------------------- #
+# Telegram public channels via the t.me/s/<channel> web preview — no API keys
+# (merged from v1; the keyed Telethon stream stays available as type=telegram)
+# --------------------------------------------------------------------------- #
+def _parse_telegram_page(page: str) -> list[dict[str, Any]]:
+    soup = BeautifulSoup(page, "lxml")
+    posts = []
+    for msg in soup.select("div.tgme_widget_message[data-post]"):
+        text_el = msg.select_one("div.tgme_widget_message_text")
+        if text_el is None:
+            continue
+        time_el = msg.select_one("a.tgme_widget_message_date time[datetime]")
+        for br in text_el.find_all("br"):
+            br.replace_with("\n")
+        posts.append(
+            {
+                "post": msg.get("data-post", ""),
+                "text": text_el.get_text("", strip=True),
+                "html": str(text_el),
+                "time": time_el.get("datetime") if time_el else None,
+            }
+        )
+    return posts
+
+
+async def _telegram_web(cfg: SourceConfig) -> ConnectResult:
+    channels = [c.strip() for c in (cfg.params.get("channels") or [cfg.params.get("channel")]) if c and str(c).strip()]
+    if not channels:
+        raise ConnectionError("telegram_web: no channel configured (params.channels)")
+    pool = HttpPool.get()
+    items: ConnectResult = []
+    for channel in channels[:4]:  # keep one source bounded
+        html_text = await pool.fetch_text(
+            f"https://t.me/s/{channel}", source_headers={"Accept": "text/html"}, source_id=cfg.id
+        )
+        if not html_text:
+            continue
+        posts = await asyncio.to_thread(_parse_telegram_page, html_text)
+        for p in posts[: cfg.params.get("max_items", 20)]:
+            text = str(p["text"] or "")
+            first = text.split("\n", 1)[0].strip()
+            if len(first) < 15:
+                first = " ".join(text[:200].split())
+            if len(first) < 10:
+                continue
+            published = None
+            if p["time"]:
+                try:
+                    published = datetime.fromisoformat(str(p["time"]).replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+            items.append(
+                RawItem(
+                    source_id=cfg.id,
+                    external_id=f"tg:{p['post']}",
+                    title=first[:220],
+                    url=f"https://t.me/{p['post']}",
+                    published_at=published,
+                    body_html=str(p["html"]),
+                    extra={"hint_categories": cfg.params.get("hint_categories", ["Breaking", "Geopolitics"])},
+                )
+            )
+    return items
+
+
+# --------------------------------------------------------------------------- #
 # registry
 # --------------------------------------------------------------------------- #
 CONNECTORS: dict[str, ConnectFn] = {
@@ -613,6 +728,8 @@ CONNECTORS: dict[str, ConnectFn] = {
     "reddit": _reddit,
     "html": _html_links,
     "cloud_status": _rss_family,
+    "cisa_kev": _cisa_kev,
+    "telegram_web": _telegram_web,
 }
 
 

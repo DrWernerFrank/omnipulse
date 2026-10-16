@@ -42,10 +42,27 @@ services:
         condition: service_healthy
     environment:
       OMNIPULSE_ENV: production
+      # merged engine profile: v2 (default, /api/*) or v1 (Redis-stream pipeline, /v1/*)
+      OMNIPULSE_PROFILE: ${OMNIPULSE_PROFILE:-v2}
       OMNIPULSE_DATABASE_URL: postgresql://omnipulse:omnipulse@postgres:5432/omnipulse
       OMNIPULSE_REDIS_URL: redis://redis:6379/0
       OMNIPULSE_SOURCES_FILE: /app/config/default_sources.json
       OMNIPULSE_PUBLIC_URL: http://localhost:8000
+      # ---- v1 profile (OMNI_* namespace; used only when OMNIPULSE_PROFILE=v1) ----
+      OMNI_MODE: ${OMNI_MODE:-full}
+      OMNI_REDIS_URL: redis://redis:6379/0
+      OMNI_DATABASE_URL: postgresql://omnipulse:omnipulse@postgres:5432/omnipulse
+      OMNI_SOURCES_FILE: /app/config/v1_sources.json
+      OMNI_EMBEDDER: ${OMNI_EMBEDDER:-hash}
+      # ---- LLM enrichment (any OpenAI-compatible endpoint; set via .env, never committed) ----
+      OMNIPULSE_LLM_PROVIDER: ${OMNIPULSE_LLM_PROVIDER:-auto}
+      OMNIPULSE_LLM_BASE_URL: ${OMNIPULSE_LLM_BASE_URL:-}
+      OMNIPULSE_LLM_API_KEY: ${OMNIPULSE_LLM_API_KEY:-}
+      OMNIPULSE_LLM_MODEL: ${OMNIPULSE_LLM_MODEL:-}
+      OMNI_LLM_PROVIDER: ${OMNI_LLM_PROVIDER:-none}
+      OMNI_LLM_BASE_URL: ${OMNI_LLM_BASE_URL:-}
+      OMNI_LLM_API_KEY: ${OMNI_LLM_API_KEY:-}
+      OMNI_LLM_MODEL: ${OMNI_LLM_MODEL:-}
       # Optional keyed enrichment / connectors (system is fully functional without any of these):
       # OMNIPULSE_OPENAI_API_KEY: sk-...
       # OMNIPULSE_ANTHROPIC_API_KEY: sk-ant-...
@@ -56,8 +73,11 @@ services:
       - "8000:8000"
     restart: unless-stopped
 
+  # Terminal UI. Profile-matched to the backend:
+  #   default:            ./frontend        (v2 tape terminal, port 3000)
+  #   TERMINAL_DIR=frontend_v1 docker compose up   (v1 tiling terminal)
   frontend:
-    build: ./frontend
+    build: ${TERMINAL_DIR:-./frontend}
     container_name: omnipulse-frontend
     depends_on:
       - backend
@@ -65,7 +85,9 @@ services:
       - "3000:80"
     restart: unless-stopped
 
-  # Stdio MCP server for AI agents. Run with: docker compose --profile agents up -d
+  # Stdio MCP server for AI agents (v2 profile; the v1 profile instead serves
+  # streamable-HTTP MCP at http://localhost:8000/mcp through the backend).
+  # Run with: docker compose --profile agents up -d
   # then attach: docker attach omnipulse-mcp  (or run natively: python -m app.mcp_server)
   mcp:
     build: ./backend

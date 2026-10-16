@@ -12,5 +12,10 @@ markdownify>=0.13.1
 websockets>=13.1
 orjson>=3.10.7
 numpy>=1.26.0
-mcp>=1.2.0
+# mcp 1.x: v1's streamable-HTTP FastMCP surface needs it; v2's stdio server uses
+# only the stable low-level Server API (works on both 1.x and 2.x)
+mcp>=1.2.0,<2
+# tests (v2 suite + merged v1 suite)
 pytest>=8.3.0
+pytest-asyncio>=0.24.0
+fakeredis>=2.24.0
