@@ -1,0 +1,5 @@
+# normalize the repo to LF; Docker/Linux builds and CI stay consistent
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

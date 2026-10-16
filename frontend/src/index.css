@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  @apply bg-bg text-dim-text2 font-mono text-[13px] antialiased;
+  font-feature-settings: "ss01", "zero";
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1c2620;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3a30;
+}
+
+/* the tape rows */
+.tape-row {
+  @apply flex items-center gap-3 px-2 border-b border-bg-border/40 cursor-pointer;
+}
+.tape-row:hover {
+  @apply bg-bg-hover;
+}
+.tape-row.selected {
+  @apply bg-accent/10 border-l-2 border-l-accent;
+}
+.tape-row.flash {
+  animation: flashIn 0.6s ease-out;
+}
+
+/* urgency glyphs */
+.u-high {
+  @apply text-red-flash font-bold;
+}
+.u-med {
+  @apply text-amber-flash;
+}
+
+/* category chips */
+.chip {
+  @apply inline-block rounded-sm px-1.5 py-[1px] text-[10px] leading-[16px] border;
+}
+.chip-Macro { @apply bg-blue-500/10 text-blue-text border-blue-500/30; }
+.chip-Equities { @apply bg-amber-500/10 text-amber-text border-amber-500/30; }
+.chip-Crypto { @apply bg-accent/10 text-accent-text border-accent/30; }
+.chip-AITech { @apply bg-cyan-500/10 text-cyan-300 border-cyan-500/30; }
+.chip-Geopolitics { @apply bg-red-500/10 text-red-text border-red-500/30; }
+.chip-Cybersecurity { @apply bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/30; }
+.chip-Science { @apply bg-teal-500/10 text-teal-300 border-teal-500/30; }
+.chip-Regulatory { @apply bg-yellow-600/10 text-yellow-200 border-yellow-600/30; }
+.chip-Breaking { @apply bg-red-600/20 text-red-flash font-bold border-red-600/50; }
+
+/* sentiment bar */
+.sent-pos { @apply text-accent-text; }
+.sent-neg { @apply text-red-text; }
+
+/* statusbar dots */
+.dot-ok { @apply bg-accent; }
+.dot-degraded { @apply bg-amber-flash; }
+.dot-dead { @apply bg-red-flash; }
+.dot-paused { @apply bg-dim-text; }
+.dot-waiting_key { @apply bg-blue-flash; }
+
+kbd {
+  @apply rounded border border-bg-border bg-bg-raised px-1 text-[10px] text-dim-text;
+}

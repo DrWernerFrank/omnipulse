@@ -1,0 +1,16 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store
+*.sqlite3
+telethon.session*
+.pytest_cache/
+smoke_out.txt
+uvicorn_out.txt

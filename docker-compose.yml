@@ -1,0 +1,84 @@
+name: omnipulse
+
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: omnipulse-postgres
+    environment:
+      POSTGRES_DB: omnipulse
+      POSTGRES_USER: omnipulse
+      POSTGRES_PASSWORD: omnipulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - omnipulse-pgdata:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnipulse -d omnipulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: omnipulse-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: omnipulse-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      OMNIPULSE_ENV: production
+      OMNIPULSE_DATABASE_URL: postgresql://omnipulse:omnipulse@postgres:5432/omnipulse
+      OMNIPULSE_REDIS_URL: redis://redis:6379/0
+      OMNIPULSE_SOURCES_FILE: /app/config/default_sources.json
+      OMNIPULSE_PUBLIC_URL: http://localhost:8000
+      # Optional keyed enrichment / connectors (system is fully functional without any of these):
+      # OMNIPULSE_OPENAI_API_KEY: sk-...
+      # OMNIPULSE_ANTHROPIC_API_KEY: sk-ant-...
+      # OMNIPULSE_OLLAMA_URL: http://host.docker.internal:11434
+    volumes:
+      - ./config:/app/config:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: omnipulse-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+  # Stdio MCP server for AI agents. Run with: docker compose --profile agents up -d
+  # then attach: docker attach omnipulse-mcp  (or run natively: python -m app.mcp_server)
+  mcp:
+    build: ./backend
+    container_name: omnipulse-mcp
+    profiles: ["agents"]
+    depends_on:
+      - backend
+    environment:
+      OMNIPULSE_API_URL: http://backend:8000
+    command: ["python", "-m", "app.mcp_server"]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  omnipulse-pgdata:
