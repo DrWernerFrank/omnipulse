@@ -2,11 +2,13 @@
 
 **Ultra-low-latency real-time news terminal & AI-agent intelligence hub.**
 
-Two audiences, one engine:
+Two audiences, one engine, one app:
 
 1. **Human operators** — a keyboard-first, high-density, Bloomberg-style streaming
-   web terminal (virtualized 10,000-row tape, story clusters, source registry,
-   command palette).
+   web terminal in **two switchable skins**: the virtualized 10,000-row **tape**
+   + command palette, and the classic quad-pane **tiling** terminal
+   (firehose · clusters · reader · sources) — flip between them like a theme,
+   persisted in the browser.
 2. **Autonomous AI agents** — a native **MCP server**, a stable **OpenAPI 3.1**
    REST surface, and token-optimized **WebSocket / SSE firehoses** with
    server-side filtering. Zero HTML overhead, ~85% token reduction in compact mode.
@@ -255,6 +257,8 @@ unwatch(subscription_id)
 
 ## Terminal keyboard map
 
+### Tape skin (default)
+
 | Key | Action |
 |---|---|
 | `j` `k` / `↑` `↓` | move tape cursor |
@@ -265,7 +269,7 @@ unwatch(subscription_id)
 | `u` | cycle urgency ladder (all → ≥5 → ≥7 → ≥8 → ≥9 → 10) |
 | `f` / `s` | cycle left pane (filters / sources / clusters) |
 | `d` | toggle detail drawer |
-| `Ctrl+K` | command palette |
+| `Ctrl+K` | command palette (incl. skin switch) |
 | `g` / `G` | jump to top / bottom |
 | `Esc` | close drawer / palette |
 
@@ -274,6 +278,26 @@ Left pane tabs: **filters** (search, categories, urgency slider, tickers),
 velocity — click for the full timeline of how a story developed). Right pane:
 full event dossier (flash summary, 3-bullet brief, entities, tickers, locations,
 cluster link, clean body, origin link).
+
+### Tiling skin (classic v1 terminal)
+
+| Key | Action |
+|---|---|
+| `j` `k` `↑` `↓` `PgUp` `PgDn` | move selection in the focused pane |
+| `1`–`4` / `Tab` | focus firehose · clusters · reader · sources |
+| `z` | zoom the focused pane |
+| `L` | cycle layout: quad → wide → reader |
+| `Space` | pause / resume the live view |
+| `f` | follow the head of the stream |
+| `u` | cycle urgency floor (off → ≥5 → ≥7 → ≥9) |
+| `c` | filter to the selected event's story cluster |
+| `o` / `y` | open original article / copy event JSON |
+| `m` | sound on urgency ≥ 9 |
+| `/` | filter DSL: `u>=7 cat:crypto $NVDA src:reuters "rate cut" -opinion` |
+| `:` | commands — `:layout`, `:export`, `:add`, `:rm`, `:pause`, `:tape`… |
+| `?` | full in-app help overlay |
+
+Full keyboard details live in the app: press `?` in the tiling skin.
 
 ---
 
@@ -284,16 +308,17 @@ omnipulse/
 ├── docker-compose.yml            # postgres(timescale+pgvector) · redis · backend · frontend · mcp
 ├── .env.example                  # every knob, all optional
 ├── config/
-│   └── default_sources.json      # 71 verified zero-key sources (tiers A-F)
-├── backend/app/
-│   ├── main.py                   # FastAPI assembly + lifespan
+│   ├── default_sources.json      # 105 verified zero-key sources (tiers A-F)
+│   └── v1_sources.json           # v1 engine registry (109)
+├── backend/app/                  # merged engine (default profile)
+│   ├── main.py                   # FastAPI assembly + lifespan + profile dispatch
 │   ├── api.py                    # REST + WS + SSE surface
 │   ├── openapi.py                # hand-written OpenAPI 3.1 (agent-stable)
 │   ├── mcp_server.py             # stdio MCP server (19 tools, 3 resources)
 │   ├── engine.py                 # adaptive scheduler, health, DLQ, streams
 │   ├── pipeline.py               # dedup → cluster → enrich → persist → fanout
 │   ├── enrich.py                 # heuristic NLP + optional LLM refinement
-│   ├── connectors.py             # 16 connector types
+│   ├── connectors.py             # 16 connector types (incl. CISA KEV, telegram_web)
 │   ├── streams.py                # Bluesky Jetstream + Telegram listeners
 │   ├── http.py                   # token buckets, conditional GET, backoff
 │   ├── bus.py                    # Redis Streams+pub/sub (in-process fallback)
@@ -301,17 +326,24 @@ omnipulse/
 │   ├── embeddings.py             # 256-dim hashed embeddings (~µs, zero deps)
 │   ├── text.py                   # SimHash, MinHash, boilerplate→markdown
 │   ├── gazetteer.py              # orgs/people/tickers/geo/sentiment data
+│   ├── dsl.py                    # query DSL parser (merged from v1)
+│   ├── webhooks.py               # outbound HMAC-signed webhooks (merged from v1)
 │   ├── schemas.py                # canonical NewsEvent + FilterSpec
 │   ├── ids.py                    # monotonic ULIDs
-│   └── config.py                 # OMNIPULSE_* settings
-├── backend/tests/                # 41 tests: ids, text, embeddings, schemas,
-│   │                             #   enrichment heuristics, pipeline e2e
+│   └── config.py                 # OMNIPULSE_* settings (profile: v2 | v1)
+├── backend/omnipulse/            # v1 engine package (legacy profile, OMNI_* env)
+├── backend/tests/                # 83 tests: ids, text, embeddings, schemas,
+│   │                             #   enrichment, pipeline e2e, v1 api, merge
 └── frontend/src/
-    ├── App.tsx                   # layout + global hotkeys
-    ├── store.ts                  # Zustand store (10k-row ring buffer)
+    ├── App.tsx                   # layout + skin switch (tape ⇄ tiling)
+    ├── store.ts                  # Zustand store (10k-row ring + appearance)
     ├── api.ts                    # WS client w/ auto-reconnect + resubscribe
+    ├── tiling/                   # classic v1 terminal as a switchable skin:
+    │                             #   quad/wide/reader panes, filter DSL,
+    │                             #   markdown reader, command bar, keyboard map
     └── components/               # TopBar, EventTape (TanStack Virtual),
                                   #   LeftPanel, DetailDrawer, CommandPalette, StatusBar
+└── frontend_v1/                  # standalone v1 terminal (for the v1 engine profile)
 ```
 
 ### Ingestion & resilience
@@ -447,7 +479,7 @@ pushed items skip the queue entirely.
 ## Verification
 
 ```bash
-cd backend && python -m pytest tests -q   # 53 unit/integration tests
+cd backend && python -m pytest tests -q   # 83 unit/integration tests
 cd backend && python -m compileall -q app # syntax gate
 cd frontend && npm run build              # tsc + vite production build
 ```

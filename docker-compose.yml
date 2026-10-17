@@ -73,9 +73,9 @@ services:
       - "8000:8000"
     restart: unless-stopped
 
-  # Terminal UI. Profile-matched to the backend:
-  #   default:            ./frontend        (v2 tape terminal, port 3000)
-  #   TERMINAL_DIR=frontend_v1 docker compose up   (v1 tiling terminal)
+  # Terminal UI. Default ./frontend ships BOTH skins (tape ⇄ tiling) over the
+  # one merged engine — switchable in the browser, no second container needed.
+  #   TERMINAL_DIR=frontend_v1  → the standalone v1 terminal (only for the v1 engine profile)
   frontend:
     build: ${TERMINAL_DIR:-./frontend}
     container_name: omnipulse-frontend
